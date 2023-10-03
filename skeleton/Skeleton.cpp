@@ -2,6 +2,8 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
 using namespace llvm;
 
@@ -9,8 +11,26 @@ namespace {
 
 struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
-        for (auto &F : M) {
-            errs() << "I saw a function called " << F.getName() << "!\n";
+        for (auto &F : M.functions()) {
+            for (auto &B : F) {
+                for (auto &I : B) {
+                    if (auto *op = dyn_cast<BinaryOperator>(&I)) {
+                        if (op->getOpcode() == Instruction::FDiv) {
+                            errs() << "Floating point division found in function: " << F.getName() << "\n";
+                            errs() << "Instruction: " << I << "\n";
+                        } else if (op->getOpcode() == Instruction::FMul) {
+                            errs() << "Floating point multiplication found in function: " << F.getName() << "\n";
+                            errs() << "Instruction: " << I << "\n";
+                        } else if (op->getOpcode() == Instruction::FAdd) {
+                            errs() << "Floating point add found in function: " << F.getName() << "\n";
+                            errs() << "Instruction: " << I << "\n";
+                        } else if (op->getOpcode() == Instruction::FSub) {
+                            errs() << "Floating point subtraction found in function: " << F.getName() << "\n";
+                            errs() << "Instruction: " << I << "\n";
+                        }
+                    }
+                }
+            }
         }
         return PreservedAnalyses::all();
     };
